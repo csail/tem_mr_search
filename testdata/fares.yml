@@ -1,0 +1,25 @@
+---
+- from: BOS
+  to: NYC
+  price: 150
+  start: 900
+  end: 1000
+  flight: 15
+- from: BOS
+  to: NYC
+  price: 150
+  start: 1800
+  end: 1900
+  flight: 16
+- from: BOS
+  to: NYC
+  price: 200
+  start: 1200
+  end: 1245
+  flight: 17
+- from: BOS
+  to: NYC
+  price: 200
+  start: 1730
+  end: 1500
+  flight: 18
