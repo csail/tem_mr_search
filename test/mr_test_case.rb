@@ -6,6 +6,9 @@ class MrTestCase < Test::Unit::TestCase
   
   def setup
     super
+    
+    Thread.abort_on_exception = true
+    
     testdb_path = File.join File.dirname(__FILE__), "..", "testdata",
                             "fares.yml"
     @db = Db.new testdb_path
@@ -13,6 +16,7 @@ class MrTestCase < Test::Unit::TestCase
     @client_query = QueryBuilder.query { |q|
       q.attributes :price => :tem_short, :start => :tem_short,
                    :end => :tem_short
+      q.id_attribute :flight
       
       # Score: 200 + start / 100 - duration - price
       q.map { |s|

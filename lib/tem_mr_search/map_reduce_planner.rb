@@ -11,18 +11,18 @@ class MapReducePlanner
   #   job:: the Map-Reduce job (see Tem::Mr::Search::MapReduceJob)
   #   num_items: how many data items does the Map-Reduce run over
   #   num_tems:: how many TEMs are available
-  #   first_tem:: the index of the TEM that has the jobs initially
-  def initialize(job, num_items, num_tems, first_tem)
+  #   root_tem:: the index of the TEM that has the root mapper and reducer
+  def initialize(job, num_items, num_tems, root_tem)
     @job = job
-    @first_tem = first_tem
+    @root_tem = root_tem
     
     @without = { :mapper => RBTree.new, :reducer => RBTree.new }
-    @with = { :mapper => Set.new([first_tem]),
-              :reducer => Set.new([first_tem]) }
+    @with = { :mapper => Set.new([root_tem]),
+              :reducer => Set.new([root_tem]) }
     @free_tems = RBTree.new
     0.upto(num_tems - 1) do |tem|
       @free_tems[tem] = true
-      next if tem == first_tem
+      next if tem == root_tem
       @without.each { |k, v| v[tem] = true }
     end
     
@@ -126,9 +126,9 @@ class MapReducePlanner
   
   # Generates finalizing actions possible right now.
   def finalize_actions
-    return [] unless @done_reducing and !@output_id and @free_tems[@first_tem]
+    return [] unless @done_reducing and !@output_id and @free_tems[@root_tem]
     @finalize_ready = false
-    return [ :action => :finalize, :with => @first_tem,
+    return [ :action => :finalize, :with => @root_tem,
              :output_id => @last_reduce_id, :final_id => next_output_id ]
   end
   private :finalize_actions

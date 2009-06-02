@@ -2,18 +2,20 @@
 module Tem::Mr::Search
   
 class MapReduceJob  
-  attr_reader :map_secpack, :reduce_secpack, :attributes
+  attr_reader :map_secpack, :reduce_secpack, :attributes, :id_attribute
   
   def initialize(attributes)
     @map_secpack = attributes[:map]
     @reduce_secpack = attributes[:reduce]
     @finalize_secpack = attributes[:finalize]
     @attributes = attributes[:attributes]
+    @id_attribute = attributes[:id_attribute]
   end
   
   # Returns a SECpack for mapping the given object data into the query.
-  def map_for_object(object_id, object_data)
+  def map_for_object(object_data)
     return nil unless @map_secpack
+    object_id = object_data[id_attribute.to_s]    
     secpack = Tem::SecPack.new_from_array @map_secpack.to_array
     secpack.set_bytes :_id, [object_id].pack('q').unpack('C*').reverse
     attributes.each do |attribute|
@@ -24,8 +26,8 @@ class MapReduceJob
   end
   
   # Maps the given object into the query.
-  def map_object(object_id, object_data, tem)    
-    secpack = map_for_object object_id, object_data
+  def map_object(object_data, tem)    
+    secpack = map_for_object object_data
     secpack ? tem.execute(secpack) : object_data
   end
 

@@ -9,7 +9,7 @@ class QueryBuilder
     builder.query
   end
   
-  # Defines the query attributes imported into the map method.
+  # Defines the object attributes imported into the map method.
   def attributes(attributes)
     @attributes = attributes.to_a.map do |k, v|
       { :name => k,
@@ -17,6 +17,11 @@ class QueryBuilder
         :length => Tem::Abi.send(:"#{v}_length")        
       }
     end
+  end
+  
+  # Defines the object attribute that's used as an object ID.
+  def id_attribute(id_attribute)
+    @id_attribute = id_attribute.to_sym
   end
   
   # Defines the query's map procedure.
@@ -145,9 +150,11 @@ class QueryBuilder
   def query
     raise "Map procedure not specified" unless @map_secpack
     raise "Reduce procedure not specified" unless @reduce_secpack
+    raise "ID attribute not specified" unless @id_attribute
     
     ClientQuery.new :key => @query_key, :attributes => @attributes,
-                    :map => @map_secpack, :reduce => @reduce_secpack
+                    :map => @map_secpack, :reduce => @reduce_secpack,
+                    :id_attribute => @id_attribute
   end
 
   def initialize

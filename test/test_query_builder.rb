@@ -9,7 +9,7 @@ class QueryBuilderTest < MrTestCase
   end
   
   def _test_map_fare(fare)
-    enc_output = @client_query.map_object fare_id(fare), fare, $tem
+    enc_output = @client_query.map_object fare, $tem
     output = @client_query.unpack_output enc_output
     assert_equal fare_id(fare), output[:id], 'Object ID incorrectly encoded'
     assert_equal fare_score(fare), output[:score],

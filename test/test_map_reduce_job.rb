@@ -11,7 +11,8 @@ class MapReduceJobTest < MrTestCase
   end
   
   def test_map_for_object
-    secpack = @client_query.map_for_object 0x12345678, @obj1
+    obj = @obj1.merge 'flight' => 0x12345678
+    secpack = @client_query.map_for_object obj
     
     assert_equal [0, 0, 0, 0, 0x12, 0x34, 0x56, 0x78],
                  secpack.get_bytes(:_id, 8), 'Object ID embedded incorrectly'
