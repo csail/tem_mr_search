@@ -1,12 +1,16 @@
 # :nodoc: namespace
 module Tem::Mr::Search
 
-class ClientQuery < Query
+class ClientQuery < MapReduceJob
   def initialize(attributes)
     super
     @query_key = attributes[:key]
   end
 
+  # Unpacks a reduce output into its components.
+  #
+  # This is expected to be called with the encrypted output returned by the
+  # search provider.
   def unpack_output(output)
     # TODO(costan): decrypt output once we enable encryption
     decrypted_output = output

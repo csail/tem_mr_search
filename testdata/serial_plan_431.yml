@@ -1,0 +1,56 @@
+--- 
+- - :secpack: :mapper
+    :action: :migrate
+    :with: 1
+    :to: 0
+- - :secpack: :mapper
+    :action: :migrate
+    :with: 0
+    :to: 2
+  - :secpack: :reducer
+    :action: :migrate
+    :with: 1
+    :to: 0
+- - :output_id: 0
+    :action: :map
+    :with: 0
+    :item: 0
+  - :output_id: 1
+    :action: :map
+    :with: 2
+    :item: 1
+- - :secpack: :reducer
+    :action: :migrate
+    :with: 1
+    :to: 2
+- - :output_id: 2
+    :action: :map
+    :with: 0
+    :item: 2
+- - :output_id: 3
+    :action: :map
+    :with: 2
+    :item: 3
+- - :output1_id: 0
+    :output2_id: 1
+    :output_id: 4
+    :action: :reduce
+    :with: 1
+- []
+
+- - :output1_id: 2
+    :output2_id: 3
+    :output_id: 5
+    :action: :reduce
+    :with: 0
+- []
+
+- - :output1_id: 4
+    :output2_id: 5
+    :output_id: 6
+    :action: :reduce
+    :with: 0
+- - :output_id: 6
+    :action: :finalize
+    :with: 1
+    :final_id: 7

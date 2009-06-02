@@ -6,6 +6,14 @@ class Db
   def initialize(path)
     @data = File.open(path, 'r') { |f| YAML.load f }
   end
+  
+  def length
+    @data.length
+  end
+  
+  def item(item_index)
+    @data[item_index]
+  end
 end
   
 end  # namespace Tem::Mr::search

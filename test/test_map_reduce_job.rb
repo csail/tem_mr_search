@@ -1,11 +1,11 @@
 require 'test/mr_test_case'
 
-class QueryTest < MrTestCase
+class MapReduceJobTest < MrTestCase
   def setup
     super
     
-    @obj1 = @db.data[0]
-    @obj2 = @db.data[1]
+    @obj1 = @db.item 0
+    @obj2 = @db.item 1
     @output1 = (1..16).to_a
     @output2 = (17..32).to_a
   end

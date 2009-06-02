@@ -4,6 +4,8 @@ class QueryBuilderTest < MrTestCase
   def setup
     super
     Tem.auto_conf
+    $tem.activate
+    $tem.emit
   end
   
   def _test_map_fare(fare)
@@ -16,9 +18,9 @@ class QueryBuilderTest < MrTestCase
   end
   
   def test_map_reduce
-    fare1 = @db.data[0]
+    fare1 = @db.item 0
     output1 = _test_map_fare fare1
-    fare2 = @db.data[1]
+    fare2 = @db.item 1
     output2 = _test_map_fare fare2
     
     win_fare = (fare_score(fare1) > fare_score(fare2)) ? fare1 : fare2

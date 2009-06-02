@@ -8,9 +8,9 @@ Echoe.new('tem_mr_search') do |p|
   
   p.author = 'Victor Costan'
   p.email = 'victor@costan.us'
-  p.summary = 'Tem Map-Reduce proof of concept: corpus search.'
+  p.summary = 'Tem Map-Reduce proof of concept: database search.'
   p.url = 'http://tem.rubyforge.org'
-  p.dependencies = ['tem_ruby >=0.10.2']
+  p.dependencies = ['tem_ruby >=0.11.2', 'tem_multi_proxy >=0.2']
   
   p.need_tar_gz = !Platform.windows?
   p.need_zip = !Platform.windows?
