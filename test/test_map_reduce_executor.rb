@@ -14,21 +14,20 @@ class MapReduceExecutorTest < MrTestCase
     executor = MRExecutor.new @client_query, @db, tems, root_tem
     packed_output = executor.execute
     result = @client_query.unpack_output packed_output
-    assert_equal 18, result[:id], 'Incorrect Map-Reduce result'
+    gold_item = @db.item 5 
+    assert_equal fare_id(gold_item), result[:id],
+                 'Incorrect Map-Reduce result (ID)'
+    assert_equal fare_score(gold_item), result[:score],
+                 'Incorrect Map-Reduce result (score)'
   end
   
   def test_executor_with_autoconf
     _test_executor [$tem], 0
   end
   
-  def test_executor_with_cluster
-    cluster_config = ['lightbulb2.local', 'darkbulb.local'].map { |host|
-      Tem::MultiProxy::Client.query_tems host    
-    }.flatten
-    assert_equal 8, cluster_config.length, 'Incorrect cluster setup'
-    tems = cluster_config.map do |config|
-      Tem::Session.new Tem::Transport::AutoConfigurator.try_transport(config)
-    end
+  def test_executor_with_cluster    
+    tems = Tem::Mr::Search::Server.tems_from_cluster_file @cluster_file
+    assert_equal 8, tems.length, 'Incorrect cluster setup'
     
     tems.each { |tem| tem.activate; tem.emit }
     

@@ -9,43 +9,21 @@ class MrTestCase < Test::Unit::TestCase
     
     Thread.abort_on_exception = true
     
-    testdb_path = File.join File.dirname(__FILE__), "..", "testdata",
-                            "fares.yml"
-    @db = Db.new testdb_path
+    @db_path = File.join File.dirname(__FILE__), "..", "testdata", "fares.yml"
+    @cluster_file = File.join File.dirname(__FILE__), "..", "testdata",
+                            "cluster.yml"
+    @empty_cluster_file = File.join File.dirname(__FILE__), "..", "testdata",
+                                    "empty_cluster.yml"
+    @db = Db.new @db_path
 
-    @client_query = QueryBuilder.query { |q|
-      q.attributes :price => :tem_short, :start => :tem_short,
-                   :end => :tem_short
-      q.id_attribute :flight
-      
-      # Score: 200 + start / 100 - duration - price
-      q.map { |s|
-        s.ldwc 200
-        s.ldw :start
-        s.ldbc 100
-        s.div
-        s.add
-        s.ldw :end
-        s.ldw :start
-        s.sub
-        s.sub
-        s.ldw :price
-        s.sub
-        s.stw :score
-      }
-
-      # The greater score wins.
-      q.reduce { |s|
-        s.ldw :score1
-        s.ldw :score2
-        s.cmp
-        s.stw :comparison
-      }
-    }
+    @client_query = WebClientQueryBuilder.query :layovers_cost => 1000,
+                                                :start_time_cost => -1,
+                                                :duration_cost => 1
   end
   
   def fare_score(fare)
-    200 + fare['start'] / 100 - fare['price'] - (fare['end'] - fare['start'])
+    20000 + fare['start_time'] - fare['price'] - (fare['end_time'] -
+        fare['start_time']) - fare['layovers'] * 1000
   end
   
   def fare_id(fare)

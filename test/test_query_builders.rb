@@ -1,6 +1,6 @@
 require 'test/mr_test_case'
 
-class QueryBuilderTest < MrTestCase
+class QueryBuildersTest < MrTestCase
   def setup
     super
     Tem.auto_conf
@@ -9,7 +9,7 @@ class QueryBuilderTest < MrTestCase
   end
   
   def _test_map_fare(fare)
-    enc_output = @client_query.map_object fare, $tem
+    enc_output = @client_query.mapper.map_object fare, $tem
     output = @client_query.unpack_output enc_output
     assert_equal fare_id(fare), output[:id], 'Object ID incorrectly encoded'
     assert_equal fare_score(fare), output[:score],
@@ -26,7 +26,7 @@ class QueryBuilderTest < MrTestCase
     win_fare = (fare_score(fare1) > fare_score(fare2)) ? fare1 : fare2
     # Try both permutations to ensure all branches of the reduce code work.
     [[output1, output2], [output2, output1]].each do |o1, o2|
-      enc_output = @client_query.reduce_outputs o1, o2, $tem
+      enc_output = @client_query.reducer.reduce_outputs o1, o2, $tem
       output = @client_query.unpack_output enc_output
       assert_equal fare_id(win_fare), output[:id], 'The wrong fare won (bad ID)'
       assert_equal fare_score(win_fare), output[:score],

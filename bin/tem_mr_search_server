@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'tem_mr_search'
+
+if ARGV.length < 2 || ARGV.length >= 3
+  print "Usage: #{$0} db_file cluster_file [server_port]\n"
+  exit
+end
+
+db_file, cluster_file, server_port = ARGV[0], ARGV[1], ARGV[2]
+server = Tem::Mr::Search::Server.new db_file, cluster_file, server_port
+server.serve_loop

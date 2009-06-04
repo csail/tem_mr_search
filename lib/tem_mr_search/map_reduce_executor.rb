@@ -8,12 +8,12 @@ class MapReduceExecutor
   # Creates an executor for a Map-Reduce job.
   #
   # Arguments:
-  #   root_job:: the Map-Reduce job (see Tem::Mr::Search::MapReduceJob)
+  #   job:: the Map-Reduce job (see Tem::Mr::Search::MapReduceJob)
   #   db:: the database to run Map-Reduce over
   #   tems:: sessions to the available TEMs
   #   root_tem:: the index of the TEM that has the root mapper and reducer
   #   planner_class:: (optional) replacement for the default planner strategy
-  def initialize(root_job, db, tems, root_tem, planner_class = nil)
+  def initialize(job, db, tems, root_tem, planner_class = nil)
     planner_class ||= MapReducePlanner
     
     @db = db  # Writable only in main thread.
@@ -23,9 +23,9 @@ class MapReduceExecutor
     @planner = planner_class.new @job, db.length, tems.length, root_tem
     
     # Protected by @lock
-    @tem_jobs = { :mapper => { root_tem => root_job },
-                  :reducer => { root_tem => root_job },
-                  :finalizer => { root_tem => root_job } }
+    @tem_parts = { :mapper => { root_tem => job.mapper },
+                   :reducer => { root_tem => job.reducer },
+                   :finalizer => { root_tem => job.finalizer } }
     # Protected by @lock
     @outputs = {}
     
@@ -69,41 +69,42 @@ class MapReduceExecutor
   def execute_action(action, tem_index)
     case action[:action]
     when :migrate
-      in_job = @lock.synchronize { @tem_jobs[action[:secpack]][tem_index] }
-      out_job = in_job  # TODO(costan): actual migration
+      in_part = @lock.synchronize { @tem_parts[action[:secpack]][tem_index] }
+      out_part = in_part  # TODO(costan): actual migration
       @lock.synchronize do
-        @tem_jobs[action[:secpack]][action[:to]] = out_job
+        @tem_parts[action[:secpack]][action[:to]] = out_part
       end
       
     when :map
-      job, item = nil, nil
+      mapper, item = nil, nil
       @lock.synchronize do
-        job = @tem_jobs[:mapper][tem_index]
+        mapper = @tem_parts[:mapper][tem_index]
         item = @db.item(action[:item])
       end
-      output = job.map_object item, @tems[tem_index]
+      output = mapper.map_object item, @tems[tem_index]
       @lock.synchronize do
         @outputs[action[:output_id]] = output
       end
       
     when :reduce
-      job, output1, output2 = nil, nil, nil
+      reducer, output1, output2 = nil, nil, nil
       @lock.synchronize do
-        job = @tem_jobs[:reducer][tem_index]
+        reducer = @tem_parts[:reducer][tem_index]
         output1 = @outputs[action[:output1_id]]
         output2 = @outputs[action[:output2_id]]
       end
-      output = job.reduce_outputs output1, output2, @tems[tem_index]
+      output = reducer.reduce_outputs output1, output2, @tems[tem_index]
       @lock.synchronize do
         @outputs[action[:output_id]] = output
       end
 
     when :finalize
+      finalizer = nil
       @lock.synchronize do
-        job = @tem_jobs[:finalizer][tem_index]
+        finalizer = @tem_parts[:finalizer][tem_index]
         output = @outputs[action[:output_id]]
       end
-      final_output = job.finalize_output output, @tems[tem_index]
+      final_output = finalizer.finalize_output output, @tems[tem_index]
       @lock.synchronize do
         @outputs[action[:final_id]] = final_output
       end
