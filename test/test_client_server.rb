@@ -8,7 +8,7 @@ class ClientServerTest < MrTestCase
     
   def setup
     super
-    @server_port = 29552
+    @server_port = 29550
   end
     
   def _test_request
@@ -27,11 +27,24 @@ class ClientServerTest < MrTestCase
     end
   end
   
+  def test_dump_database
+    @server_port = 29557
+    _test_request do |server_addr|
+      items = Client.dump_database server_addr
+      assert_equal @db.length, items.length, 'Wrong number of items'
+      items.each_with_index do |item, i|
+        assert_equal @db.item(i), item, "Discrepancy in item #{i}"
+      end
+    end    
+  end
+  
   def test_query
-    Tem.auto_conf
-    @server_port = 29553
+    @server_port = 29551
     flexmock(Server).should_receive(:tems_from_cluster_file).
-                     with(@empty_cluster_file).and_return [$tem]
+                     with(@empty_cluster_file).and_return do |file|
+      Tem.auto_conf
+      [$tem]
+    end
     _test_request do |server_addr|
       result = Client.search server_addr, @client_query
       gold_item = @db.item 5

@@ -5,6 +5,8 @@ require 'yaml'
 module Tem::Mr::Search
 
 class Server
+  DEFAULT_PORT = 9052
+  
   OP = Zerg::Support::Protocols::ObjectProtocol
   OPAdapter  = Zerg::Support::Sockets::ProtocolAdapter.adapter_module OP
   
@@ -12,8 +14,19 @@ class Server
   def initialize(db_file, cluster_file, port)
     @logger = Logger.new STDERR
     @db = Db.new db_file
-    @tems = Server.tems_from_cluster_file cluster_file
-    @port = port
+    @cluster_file = cluster_file
+    @tems = []
+    refresh_tems!
+    @port = port || DEFAULT_PORT
+  end
+  
+  # Reinitializes the TEM cluster connections.
+  #
+  # This should be called reasonably often to be able to respond to cluster
+  # configuration changes.
+  def refresh_tems!
+    @tems.each { |tem| tem.disconnect }
+    @tems = Server.tems_from_cluster_file @cluster_file
   end
 
   # This server's loop.
@@ -37,7 +50,7 @@ class Server
       rescue Exception => e
         @logger.error e
       end
-      client_socket.close rescue nil
+      client_socket.close
     end
     listen_socket.close
   end
@@ -46,6 +59,7 @@ class Server
   def process_request(request)    
     case request[:type]
     when :search
+      refresh_tems!
       job = MapReduceJob.new request[:map_reduce]
       root_tem = request[:root_tem]
       executor = MapReduceExecutor.new job, @db, @tems, root_tem
@@ -54,6 +68,8 @@ class Server
       return @db.item_by_id(request[:id]) || :not_found
     when :shutdown
       return :shutdown
+    when :db_dump
+      return (0...@db.length).map { |i| @db.item(i) }
     else
       return :unknown
     end

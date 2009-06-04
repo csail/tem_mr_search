@@ -9,6 +9,10 @@ class MapReduceExecutorTest < MrTestCase
     $tem.activate
     $tem.emit
   end
+  
+  def teardown
+    $tem.disconnect
+  end
     
   def _test_executor(tems, root_tem)
     executor = MRExecutor.new @client_query, @db, tems, root_tem
