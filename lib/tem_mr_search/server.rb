@@ -82,7 +82,7 @@ class Server
       Tem::MultiProxy::Client.query_tems host
     }.flatten
     cluster_configs.reject { |config| config.nil? }.map do |config|
-      Tem::Session.new Tem::Transport::AutoConfigurator.try_transport(config)
+      Tem::Session.new Smartcard::Iso::AutoConfigurator.try_transport(config)
     end
   end
 end

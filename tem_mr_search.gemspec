@@ -2,11 +2,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{tem_mr_search}
-  s.version = "0.2.1"
+  s.version = "0.2.2"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 1.2") if s.respond_to? :required_rubygems_version=
   s.authors = ["Victor Costan"]
-  s.date = %q{2009-06-04}
+  s.date = %q{2009-08-19}
   s.default_executable = %q{tem_mr_search_server}
   s.description = %q{Tem Map-Reduce proof of concept: database search.}
   s.email = %q{victor@costan.us}
@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
   s.rdoc_options = ["--line-numbers", "--inline-source", "--title", "Tem_mr_search", "--main", "README"]
   s.require_paths = ["lib"]
   s.rubyforge_project = %q{tem}
-  s.rubygems_version = %q{1.3.4}
+  s.rubygems_version = %q{1.3.5}
   s.summary = %q{Tem Map-Reduce proof of concept: database search.}
   s.test_files = ["test/test_client_server.rb", "test/test_db.rb", "test/test_map_reduce_executor.rb", "test/test_map_reduce_job.rb", "test/test_map_reduce_planner.rb", "test/test_query_builders.rb"]
 

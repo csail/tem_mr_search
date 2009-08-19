@@ -1,3 +1,5 @@
+v0.2.2. Switched to smartcard API 0.4.
+
 v0.2.1. Check for cluster configuration on each query.
 
 v0.2. Implemented remote queries.
