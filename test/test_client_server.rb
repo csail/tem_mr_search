@@ -8,7 +8,6 @@ class ClientServerTest < MrTestCase
     
   def setup
     super
-    @server_port = 29550
   end
     
   def _test_request
@@ -21,6 +20,7 @@ class ClientServerTest < MrTestCase
   end
   
   def test_fetch_item
+    @server_port = 29550
     _test_request do |server_addr|
       fetched_item = Client.fetch_item server_addr, fare_id(@db.item(3))
       assert_equal @db.item(3), fetched_item, 'Fetch fail' 
