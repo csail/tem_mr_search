@@ -20,7 +20,7 @@ class Server
     @port = port || DEFAULT_PORT
     
     @listen_socket = Zerg::Support::SocketFactory.socket :in_port => @port,
-                                                         :reuse_addr => true    
+        :reuse_addr => true, :no_delay => true
   end
   
   # Reinitializes the TEM cluster connections.

@@ -36,7 +36,7 @@ class Client
   # Issues a request against a Map-Reduce server and returns the response.
   def self.issue_request(server_addr, request)
     socket = Zerg::Support::SocketFactory.socket :out_addr => server_addr,
-        :out_port => Server::DEFAULT_PORT
+        :out_port => Server::DEFAULT_PORT, :no_delay => true
     socket.extend OPAdapter
     socket.send_object request
     response = socket.recv_object response

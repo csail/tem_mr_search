@@ -1,3 +1,5 @@
+v0.2.4. Disabled Nagle's algorithm to shave off 100ms in query times.
+
 v0.2.3. Slightly more robust communication code in the RPC server/client.
 
 v0.2.2. Switched to smartcard API 0.4.
