@@ -36,7 +36,7 @@ class MapReduceExecutorTest < MrTestCase
     tems = Tem::Mr::Search::Server.tems_from_cluster_file @cluster_file
     assert_equal 8, tems.length, 'Incorrect cluster setup'
     
-    tems.each { |tem| tem.activate if tem.emit }
+    tems.each { |tem| tem.emit if tem.activate }
     
     _test_executor tems, 0
   end
