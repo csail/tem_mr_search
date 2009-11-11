@@ -8,19 +8,29 @@ class ClientServerTest < MrTestCase
     
   def setup
     super
+    @server_port = 29550
+    @thread_abort = Thread.abort_on_exception
+    Thread.abort_on_exception = true
+  end
+  
+  def teardown
+    Thread.abort_on_exception = @thread_abort
+    super
   end
     
   def _test_request
-    Thread.new do
-      Server.new(@db_path, @empty_cluster_file, @server_port).serve_loop
+    server = Server.new(@db_path, @empty_cluster_file, @server_port)
+    server_thread = Thread.new do
+      server.serve_loop
     end
-    sleep 0.1
+    Kernel.sleep 0.1  # Wait for the server to start.
     yield "localhost:#{@server_port}"
     Client.shutdown_server "localhost:#{@server_port}"
+    server_thread.join
+    Kernel.sleep 0.1  # Wait for the server to cleanup after itself.
   end
   
   def test_fetch_item
-    @server_port = 29550
     _test_request do |server_addr|
       fetched_item = Client.fetch_item server_addr, fare_id(@db.item(3))
       assert_equal @db.item(3), fetched_item, 'Fetch fail' 
@@ -28,7 +38,6 @@ class ClientServerTest < MrTestCase
   end
   
   def test_dump_database
-    @server_port = 29557
     _test_request do |server_addr|
       items = Client.dump_database server_addr
       assert_equal @db.length, items.length, 'Wrong number of items'
@@ -39,7 +48,6 @@ class ClientServerTest < MrTestCase
   end
   
   def test_query
-    @server_port = 29551
     flexmock(Server).should_receive(:tems_from_cluster_file).
                      with(@empty_cluster_file).and_return do |file|
       Tem.auto_conf

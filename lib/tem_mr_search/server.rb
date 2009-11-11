@@ -18,6 +18,9 @@ class Server
     @tems = []
     refresh_tems!
     @port = port || DEFAULT_PORT
+    
+    @listen_socket = Zerg::Support::SocketFactory.socket :in_port => @port,
+                                                         :reuse_addr => true    
   end
   
   # Reinitializes the TEM cluster connections.
@@ -30,29 +33,28 @@ class Server
   end
 
   # This server's loop.
-  def serve_loop
-    listen_socket = Zerg::Support::SocketFactory.socket :in_port => @port
-    listen_socket.listen
-    shutdown_received = false
-    until shutdown_received
+  def serve_loop    
+    @listen_socket.listen
+    @shutdown_received = false
+    until @shutdown_received
       begin
-        client_socket, client_addr = listen_socket.accept
+        client_socket, client_addr = @listen_socket.accept
         client_socket.extend OPAdapter
         request = client_socket.recv_object
         begin
           response = process_request request
         rescue Exception => e
           @logger.error e
-          response = nil
+          response = :error
         end        
-        client_socket.send_object response if response
-        shutdown_received = true if response == :shutdown
-      rescue Exception => e
+        client_socket.send_object response
+        @shutdown_received = true if response == :shutdown
+      rescue RuntimeError => e
         @logger.error e
       end
       client_socket.close
     end
-    listen_socket.close
+    @listen_socket.close
   end
   
   # Computes the response of a single request.

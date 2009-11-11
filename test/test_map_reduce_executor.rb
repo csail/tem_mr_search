@@ -6,14 +6,17 @@ class MapReduceExecutorTest < MrTestCase
   def setup
     super
     Tem.auto_conf
-    $tem.activate
-    $tem.emit
+    $tem.emit if $tem.activate
+    @thread_abort = Thread.abort_on_exception
+    Thread.abort_on_exception = true
   end
   
   def teardown
+    Thread.abort_on_exception = @thread_abort
     $tem.disconnect
+    super
   end
-    
+      
   def _test_executor(tems, root_tem)
     executor = MRExecutor.new @client_query, @db, tems, root_tem
     packed_output = executor.execute
@@ -33,7 +36,7 @@ class MapReduceExecutorTest < MrTestCase
     tems = Tem::Mr::Search::Server.tems_from_cluster_file @cluster_file
     assert_equal 8, tems.length, 'Incorrect cluster setup'
     
-    tems.each { |tem| tem.activate; tem.emit }
+    tems.each { |tem| tem.activate if tem.emit }
     
     _test_executor tems, 0
   end

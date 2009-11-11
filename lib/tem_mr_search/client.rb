@@ -3,7 +3,7 @@ module Tem::Mr::Search
 
 class Client
   OP = Zerg::Support::Protocols::ObjectProtocol
-  OPAdapter  = Zerg::Support::Sockets::ProtocolAdapter.adapter_module OP
+  OPAdapter = Zerg::Support::Sockets::ProtocolAdapter.adapter_module OP
   
   # Performs a private database search using a Map-Reduce.
   def self.search(server_addr, client_query)
@@ -38,13 +38,9 @@ class Client
     socket = Zerg::Support::SocketFactory.socket :out_addr => server_addr,
         :out_port => Server::DEFAULT_PORT
     socket.extend OPAdapter
-    begin
-      socket.send_object request
-      response = socket.recv_object response
-    rescue
-      response = nil
-    end
-    socket.close rescue nil
+    socket.send_object request
+    response = socket.recv_object response
+    socket.close
     response
   end
 end
