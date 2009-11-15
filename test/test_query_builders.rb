@@ -31,7 +31,8 @@ class QueryBuildersTest < MrTestCase
       assert_equal fare_id(win_fare), output[:id], 'The wrong fare won (bad ID)'
       assert_equal fare_score(win_fare), output[:score],
                    'The wrong fare won (bad score)'
-      assert_equal [1, 2, 3], output[:check], 'Incorrect check bytes'
+      assert_equal [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], output[:check],
+                   'Incorrect check bytes'
 
       assert_not_equal enc_output, output1, 'Nonce fail'
       assert_not_equal enc_output, output2, 'Nonce fail'

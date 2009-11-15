@@ -29,7 +29,7 @@ class QueryBuilder
     @map_secpack = Tem::Assembler.assemble do |s|
       s.label :_secret
       s.label :_key
-      s.zeros :tem_ubyte, 16
+      s.data :tem_ubyte, @query_key.to_tem_key
       s.label :_check_bytes
       s.data :tem_ubyte, @check_bytes
       
@@ -39,15 +39,21 @@ class QueryBuilder
       s.ret
       
       s.entry
-      s.ldbc 16
+      s.ldbc 24
       s.outnew
-      s.call :_ranking
+      # Compute score.
+      s.call :_ranking      
+      # Compute padding.
       s.ldbc 3
       s.ldwc :_nonce
       s.rnd
-      s.mcfxb :from => :_check_bytes, :to => :_check, :size => 3
-      # TODO(costan): encryption instead of plain dump
-      s.outfxb :from => :_id, :size => 16
+      s.mcfxb :from => :_check_bytes, :to => :_check,
+              :size => @check_bytes.length
+      
+      # Encrypt output.
+      s.ldwc :const => :_key
+      s.rdk
+      s.kefxb :from => :_id, :size => 23, :to => 0xFFFF
       s.halt
       
       s.label :_plain
@@ -68,7 +74,7 @@ class QueryBuilder
       s.zeros :tem_ubyte, 3
       # Check bytes to prevent malicious input corruption.
       s.label :_check
-      s.zeros :tem_ubyte, 3
+      s.zeros :tem_ubyte, @check_bytes.length
       
       s.stack 64
     end    
@@ -79,7 +85,7 @@ class QueryBuilder
     @reduce_secpack = Tem::Assembler.assemble do |s|
       s.label :_secret
       s.label :_key
-      s.zeros :tem_ubyte, 16
+      s.data :tem_ubyte, @query_key.to_tem_key
       s.label :_check
       s.data :tem_ubyte, @check_bytes
       
@@ -90,15 +96,19 @@ class QueryBuilder
       s.ret
       
       s.entry
-      s.ldbc 16
+      s.ldbc :const => 24
       s.outnew      
-      # Decode inputs.
+      # Decrypt inputs.
+      s.ldwc :const => :_key
+      s.rdk
+      s.stw :_key_id
       [1, 2].each do |i|
-        # TODO(costan): decrypt instead of copying
-        s.mcfxb :from => :"_output#{i}", :to => :"_id#{i}", :size => 16
+        s.ldw :_key_id
+        s.kdfxb :from => :"_output#{i}", :to => :"_id#{i}", :size => 24
         
         # Compare the check bytes and abort if the inputs were tampered with.
-        s.mcmpfxb :op1 => :"_check#{i}", :op2 => :"_check", :size => 3
+        s.mcmpfxb :op1 => :"_check#{i}", :op2 => :"_check",
+                  :size => @check_bytes.length
         s.jz :"_check_#{i}_ok"
         s.halt
         s.label :"_check_#{i}_ok"
@@ -119,20 +129,24 @@ class QueryBuilder
       s.ldbc 3
       s.ldwc :_nonce1
       s.rnd
-      # TODO(costan): encrypt instead of copying
-      s.outfxb :from => :_id1, :size => 16
+      # Encrypt output.
+      s.ldwc :const => :_key
+      s.rdk
+      s.kefxb :from => :_id1, :size => 23, :to => 0xFFFF
       s.halt
       
       s.label :_plain
       # The comparison result produced by the user comparison procedure.
       s.label :comparison
       s.zeros :tem_short, 1
+      s.label :_key_id
+      s.zeros :tem_short, 1
       
       # The two inputs to reduce.
       [1, 2].each do |i|
         # Encrypted map/reduce output.
         s.label :"_output#{i}"        
-        s.zeros :tem_ubyte, 16
+        s.zeros :tem_ubyte, 24
         # Unencrypted input (decrypted inside TEM).
         s.label :"_id#{i}"
         s.zeros :tem_ubyte, 8
@@ -141,9 +155,9 @@ class QueryBuilder
         s.label :"_nonce#{i}"
         s.zeros :tem_ubyte, 3        
         s.label :"_check#{i}"
-        s.zeros :tem_ubyte, 3
+        s.zeros :tem_ubyte, @check_bytes.length
       end
-      s.stack 8
+      s.stack 16
     end
   end
   
@@ -158,9 +172,8 @@ class QueryBuilder
   end
 
   def initialize
-    @check_bytes = [1, 2, 3]
-    # TODO(costan): generate query key
-    @query_key = nil
+    @check_bytes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    @query_key = Tem::Keys::Symmetric.generate
   end
 end  # class QueryBuilder
 

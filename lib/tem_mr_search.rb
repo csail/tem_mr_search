@@ -1,3 +1,9 @@
+# Main include file for the tem_mr_search Rubygem.
+#
+# Author:: Victor Costan
+# Copyright:: Copyright (C) 2009 Massachusetts Institute of Technology
+# License:: MIT
+
 require 'rubygems'
 require 'tem_multi_proxy'
 require 'tem_ruby'

@@ -1,9 +1,31 @@
+# Map-Reduce RPC server.
+#
+# Author:: Victor Costan
+# Copyright:: Copyright (C) 2009 Massachusetts Institute of Technology
+# License:: MIT
+
 require 'logger'
 require 'yaml'
 
 # :nodoc: namespace
 module Tem::Mr::Search
 
+
+# Map-Reduce RPC server.
+#
+# The RPC server models the data provider in the secure Map-Reduce proof of
+# concept.
+#
+# The server accepts database queries expressed as Map-Reduce computations,
+# where each computation is enclosed in a SECpack. This makes it impossible for
+# the data provider to learn about the query. Map-Reduce computations have a 
+# single result: the ID of the record that's the query response, and its score. 
+#
+# The server also accepts direct queries for single database records, so clients
+# can retrieve the record whose ID they learn from the Map-Reduce result.
+#
+# The db_dump and shutdown requests are for demonstration and testing purposes,
+# and would not be exposed in production servers.
 class Server
   DEFAULT_PORT = 9052
   

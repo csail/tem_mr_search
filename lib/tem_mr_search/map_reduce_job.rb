@@ -1,6 +1,22 @@
+# Expresses a Map-Reduce computation whose components are performed on TEMs.
+#
+# Author:: Victor Costan
+# Copyright:: Copyright (C) 2009 Massachusetts Institute of Technology
+# License:: MIT
+
 # :nodoc: namespace
 module Tem::Mr::Search
   
+# Expresses a Map-Reduce computation whose components are performed on TEMs.
+#
+# Client code should put together Map-Reduce computations using QueryBuilder or
+# similar builder classes. In turn, builders construct and return MapReduceJob
+# instances.
+#
+# Jobs can be serialized to a hash for network transmission. To de-serialize a
+# job, pass the hash to the hash constructor:
+#     hash = job.to_hash
+#     job = MapReduceJob.new hash
 class MapReduceJob  
   attr_reader :mapper, :reducer, :finalizer, :attributes, :id_attribute
   
@@ -18,7 +34,7 @@ class MapReduceJob
     {
       :id => output[0, 8].reverse.pack('C*').unpack('q').first,
       :score => Tem::Abi.read_tem_short(output, 8),
-      :check => output[13, 3]
+      :check => output[13, 10]
     }
   end
   

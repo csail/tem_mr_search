@@ -1,3 +1,9 @@
+# Rakefile for the tem_mr_search Rubygem.
+#
+# Author:: Victor Costan
+# Copyright:: Copyright (C) 2009 Massachusetts Institute of Technology
+# License:: MIT
+
 require 'rubygems'
 gem 'echoe'
 require 'echoe'
@@ -10,7 +16,7 @@ Echoe.new('tem_mr_search') do |p|
   p.email = 'victor@costan.us'
   p.summary = 'Tem Map-Reduce proof of concept: database search.'
   p.url = 'http://tem.rubyforge.org'
-  p.dependencies = ['tem_ruby >=0.13.0', 'tem_multi_proxy >=0.2.6']
+  p.dependencies = ['tem_ruby >=0.14.0', 'tem_multi_proxy >=0.2.7']
   
   p.need_tar_gz = !Gem.win_platform?
   p.need_zip = !Gem.win_platform?

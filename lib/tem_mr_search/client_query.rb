@@ -12,8 +12,7 @@ class ClientQuery < MapReduceJob
   # This is expected to be called with the encrypted output returned by the
   # search provider.
   def unpack_output(output)
-    # TODO(costan): decrypt output once we enable encryption
-    decrypted_output = output
+    decrypted_output = @query_key.decrypt output
     unpack_decrypted_output decrypted_output
   end
 end

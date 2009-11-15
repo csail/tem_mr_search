@@ -1,9 +1,34 @@
+# Allocates the individual components of a Map-Reduce job across TEMs.
+#
+# Author:: Victor Costan
+# Copyright:: Copyright (C) 2009 Massachusetts Institute of Technology
+# License:: MIT
+
 require 'rbtree'
 require 'set'
 
 # :nodoc: namespace
 module Tem::Mr::Search
   
+# Allocates the individual components of a Map-Reduce job across TEMs.
+#
+# This class is instantiated and used by MapReduceExecutor. It should not be
+# used directly in client code, except for the purpose of replacing the default
+# planner.
+#
+# The Map-Reduce coordinator calls next_actions! on the planner, to obtain a
+# list of actions that can be carried out. The planner guarantees that the
+# actions are independent of each other, and that all their dependencies are
+# satisfied. When the coordinator learns about the completion of some actions,
+# it updates the planner's state by calling action_done. After action_done is
+# called, new_action should be called again to obtain new actions that can be
+# carried out.
+#
+# Partial results (outputs) in the Map-Reduce computation are identified by 
+# unique numbers starting from 0. The output IDs can be used as file names, if
+# the outputs are stored in a distributed file system. When the computation is
+# done (calling done? returns +true+), the +output_id+ attribute will contain
+# the ID of the computation's final result.
 class MapReducePlanner  
   # Creates a planner for a Map-Reduce job.
   #
@@ -32,8 +57,69 @@ class MapReducePlanner
     @last_reduce_id = 2 * num_items - 2
     @done_reducing, @output_id = false, nil
   end
+  
+  # Issues a set of actions that can be performed right now.
+  #
+  # The method alters the planner's state assuming the actions will be
+  # performed.
+  #
+  # Returns an array of hashes, with one hash per action to be performed. The
+  # +:action+ key specifies the type of action to be performed, and can be
+  # +:migrate+ +:map+, +:reduce+, or +:finalize. All the actions have the
+  # +:with+ key, which is the ID (0-based index) of the TEM that will be doing
+  # the action.
+  #
+  # Migrate actions have the following keys:
+  #   :secpack:: the type of SECpack to be migrated ( +:mapper+ or +:reducer+ )
+  #   :with:: the ID of the TEM doing the migration  
+  #   :to:: the number of the TEM that the SECpack should be migrated to
+  #
+  # Map actions have the following keys:
+  #   :item_id:: the ID of the item to be mapped (number in Table-Scan order)
+  #   :with:: the ID of the TEM doing the mapping
+  #   :output_id:: ID for the result of the map operation
+  #
+  # Reduce actions have the following keys:
+  #   :output1_id, :output2_id:: the IDs of the partial outputs to be reduced
+  #   :with:: the ID of the TEM doing the reducing
+  #   :output_id:: the ID for the result of the reduce operation
+  #
+  # The finalize action has the following keys:
+  #   :output_id:: the ID of the last partial output, which will be finalized
+  #   :with:: the ID of the TEM doing the finalization
+  #   :final_id:: the ID for the computation's final result
+  def next_actions!
+    actions = migrate_actions :mapper
+    actions += migrate_actions :reducer
+    actions += map_actions
+    actions += reduce_actions
+    actions += finalize_actions
+    actions
+  end
+  
+  # Informs the planner that an action issued by next_actions! was completed.
+  #
+  # Args:
+  #   action:: an action hash, as returned by next_actions!
+  #
+  # The return value is not specified.
+  def action_done(action)
+    dispatch = { :migrate => :done_migrating, :map => :done_mapping, :reduce =>
+                 :done_reducing, :finalize => :done_finalizing } 
+    self.send dispatch[action[:action]], action
+  end
+
+  # True when the Map-Reduce computation is complete.
+  def done?
+    !@output_id.nil?
+  end
+  
+  # The output ID of the Map-Reduce's final result.
+  attr_reader :output_id
 
   # Generates migrating actions for a SECpack type that are possible now.
+  #
+  # See next_actions! for a description of the return value.
   def migrate_actions(sec_type)
     actions = []
     return actions if @without[sec_type].length == 0
@@ -56,24 +142,10 @@ class MapReducePlanner
     @with[action[:secpack]] << action[:to]
   end
   private :done_migrating
-  
-  # A sorted array of the free TEMs that have a SECpack type.
-  def free_tems_with_sec(sec_type)
-    tems = []
-    @free_tems.each do |tem, true_value|
-      tems << tem if @with[sec_type].include? tem
-    end
-    tems
-  end
-  
-  # A unique output_id.
-  def next_output_id
-    next_id = @last_output_id
-    @last_output_id += 1
-    next_id
-  end
-  
+    
   # Generates mapping actions possible right now.
+  #
+  # See next_actions! for a description of the return value.
   def map_actions
     actions = []
     return actions if @unmapped_items.empty?
@@ -88,6 +160,11 @@ class MapReducePlanner
   private :map_actions
   
   # Informs the planner that a data mapping has completed.
+  #
+  # Args:
+  #   action:: an action hash, as returned by map_actions
+  #
+  # The return value is not specified.
   def done_mapping(action)
     @free_tems[action[:with]] = true
     @reduce_queue[action[:output_id]] = true
@@ -95,6 +172,8 @@ class MapReducePlanner
   private :done_mapping
   
   # Generates reducing actions possible right now.
+  #
+  # See next_actions! for a description of the return value.
   def reduce_actions
     actions = []
     return actions if @reduce_queue.length <= 1
@@ -114,6 +193,11 @@ class MapReducePlanner
   private :reduce_actions
   
   # Informs the planner that a data reduction has completed.
+  #
+  # Args:
+  #   action:: an action hash, as returned by reduce_actions
+  #
+  # The return value is not specified.
   def done_reducing(action)
     @free_tems[action[:with]] = true
     if action[:output_id] == @last_reduce_id
@@ -125,6 +209,8 @@ class MapReducePlanner
   private :done_reducing
   
   # Generates finalizing actions possible right now.
+  #
+  # See next_actions! for a description of the return value.
   def finalize_actions
     return [] unless @done_reducing and !@output_id and @free_tems[@root_tem]
     @finalize_ready = false
@@ -134,36 +220,40 @@ class MapReducePlanner
   private :finalize_actions
   
   # Informs the planner that an action issued by next_action was done.
+  #
+  # Args:
+  #   action:: an action hash, as returned by finalize_actions
+  #
+  # The return value is not specified.
   def done_finalizing(action)
     @free_tems[action[:with]] = true
     @output_id = action[:final_id]    
   end
   private :done_finalizing
 
-  # True when the Map-Reduce job is complete.
-  def done?
-    !@output_id.nil?
+  # A sorted array of the free TEMs that have a SECpack type migrated to them.
+  #
+  # Args:
+  #   sec_type:: the SECpack type (+:mapper+ or +:reducer+)
+  def free_tems_with_sec(sec_type)
+    tems = []
+    @free_tems.each do |tem, true_value|
+      tems << tem if @with[sec_type].include? tem
+    end
+    tems
   end
+  private :free_tems_with_sec
   
-  # The output ID of the Map-Reduce's final result.
-  attr_reader :output_id
-
-  # Informs the planner that an action issued by next_actions was completed.
-  def action_done(action)
-    dispatch = { :migrate => :done_migrating, :map => :done_mapping, :reduce =>
-                 :done_reducing, :finalize => :done_finalizing } 
-    self.send dispatch[action[:action]], action
+  # Generates a unique output ID.
+  #
+  # Returns the unique output ID, which is a non-negative integer. Future calls
+  # of this method are guaranteed to return different output IDs.
+  def next_output_id
+    next_id = @last_output_id
+    @last_output_id += 1
+    next_id
   end
+  private :next_output_id
+end  # class Tem::Mr::Search::MapReducePlanner
 
-  # Issues a set of actions that can be performed right now.
-  def next_actions!
-    actions = migrate_actions :mapper
-    actions += migrate_actions :reducer
-    actions += map_actions
-    actions += reduce_actions
-    actions += finalize_actions
-    actions
-  end  
-end
-
-end  # namespace Tem::Mr::search
+end  # namespace Tem::Mr::Search

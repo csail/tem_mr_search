@@ -1,9 +1,21 @@
+# Coordination code (executor) for performing a Map-Reduce computation.
+#
+# Author:: Victor Costan
+# Copyright:: Copyright (C) 2009 Massachusetts Institute of Technology
+# License:: MIT
+
 require 'thread'
 
 
 # :nodoc: namespace
 module Tem::Mr::Search
   
+# Coordination code (executor) for performing a Map-Reduce computation.
+#
+# The executor distributes the Map-Reduce computation across multiple TEMs. The
+# strategy used to allocate tasks to TEMs is expressed by a MapReducePlanner
+# class, and the executor instantiates that class. The executor is responsible
+# for coordinating between the TEMs and the planner.
 class MapReduceExecutor
   # Creates an executor for a Map-Reduce job.
   #
@@ -61,6 +73,7 @@ class MapReduceExecutor
       @main_queue << action
     end
   end
+  private :executor_thread
   
   # Executes a Map-Reduce planner action.
   #
@@ -108,8 +121,9 @@ class MapReduceExecutor
       @lock.synchronize do
         @outputs[action[:final_id]] = final_output
       end
-    end    
+    end
   end
-end
+  private :execute_action
+end  # class Tem::Mr::Search::MapReduceExecutor
 
 end  # namespace Tem::Mr::Search
