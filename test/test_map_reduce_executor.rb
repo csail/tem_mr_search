@@ -18,6 +18,7 @@ class MapReduceExecutorTest < MrTestCase
   end
       
   def _test_executor(tems, root_tem)
+    @client_query.bind tems[root_tem].pubek
     executor = MRExecutor.new @client_query, @db, tems, root_tem
     packed_output = executor.execute
     result = @client_query.unpack_output packed_output

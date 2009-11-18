@@ -1,3 +1,5 @@
+v0.3. SECpack binding and migration. Now we're secure.
+
 v0.2.5. Symmetric encryption for partial outputs.
 
 v0.2.4. Disabled Nagle's algorithm to shave off 100ms in query times.

@@ -1,5 +1,10 @@
-bin/tem_mr_search_server
 CHANGELOG
+LICENSE
+Manifest
+README
+Rakefile
+bin/tem_mr_search_server
+lib/tem_mr_search.rb
 lib/tem_mr_search/client.rb
 lib/tem_mr_search/client_query.rb
 lib/tem_mr_search/db.rb
@@ -9,12 +14,6 @@ lib/tem_mr_search/map_reduce_planner.rb
 lib/tem_mr_search/query_builder.rb
 lib/tem_mr_search/server.rb
 lib/tem_mr_search/web_client_query_builder.rb
-lib/tem_mr_search.rb
-LICENSE
-Manifest
-Rakefile
-README
-tem_mr_search.gemspec
 test/mr_test_case.rb
 test/test_client_server.rb
 test/test_db.rb

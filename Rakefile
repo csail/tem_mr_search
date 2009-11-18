@@ -16,8 +16,7 @@ Echoe.new('tem_mr_search') do |p|
   p.email = 'victor@costan.us'
   p.summary = 'Tem Map-Reduce proof of concept: database search.'
   p.url = 'http://tem.rubyforge.org'
-  p.dependencies = ['tem_ruby >=0.14.0', 'tem_multi_proxy >=0.2.7']
-  p.dependencies = ['tem_ruby >=0.14.0', 'tem_multi_proxy >=0.2.6']
+  p.dependencies = ['tem_ruby >=0.15.2', 'tem_multi_proxy >=0.2.7']
   p.development_dependencies = ["echoe >=3.2",
                                 "flexmock >=0.8.6"]
   

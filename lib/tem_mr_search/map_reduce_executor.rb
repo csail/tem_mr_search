@@ -30,9 +30,12 @@ class MapReduceExecutor
     
     @db = db  # Writable only in main thread.
     @tems = tems  # Writable only in main thread.
+    
+    # Protected by @lock during collect_tem_ids, read-only during execute.
+    @tem_certs = Array.new @tems.length
 
     # Writable only in main thread.
-    @planner = planner_class.new @job, db.length, tems.length, root_tem
+    @planner = planner_class.new job, db.length, tems.length, root_tem
     
     # Protected by @lock
     @tem_parts = { :mapper => { root_tem => job.mapper },
@@ -49,6 +52,8 @@ class MapReduceExecutor
 
   # Executes the job.
   def execute
+    collect_tem_ids
+    
     # Spawn TEM threads.
     @tems.each_index { |i| Thread.new(i) { |i| executor_thread i } }
     
@@ -64,7 +69,18 @@ class MapReduceExecutor
     
     return @outputs[@planner.output_id]
   end
-  
+
+  # Collects identification information from all the TEMs.
+  def collect_tem_ids
+    threads = (0...@tems.length).map do |tem_index|
+      Thread.new(tem_index, @tems[tem_index]) do |index, tem|
+        ecert = tem.endorsement_cert
+        @lock.synchronize { @tem_certs[index] = ecert }
+      end
+    end
+    threads.each { |thread| thread.join }
+  end
+
   # Main method for thread in charge of a TEM.
   def executor_thread(tem_index)
     queue = @thread_queues[tem_index]    
@@ -83,7 +99,8 @@ class MapReduceExecutor
     case action[:action]
     when :migrate
       in_part = @lock.synchronize { @tem_parts[action[:secpack]][tem_index] }
-      out_part = in_part  # TODO(costan): actual migration
+      target_ecert = @tem_certs[action[:to]]
+      out_part = in_part.migrate target_ecert, @tems[tem_index]
       @lock.synchronize do
         @tem_parts[action[:secpack]][action[:to]] = out_part
       end

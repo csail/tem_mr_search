@@ -87,15 +87,18 @@ class Server
       job = MapReduceJob.new request[:map_reduce]
       root_tem = request[:root_tem]
       executor = MapReduceExecutor.new job, @db, @tems, root_tem
-      return executor.execute
+      executor.execute
     when :fetch
-      return @db.item_by_id(request[:id]) || :not_found
+      @db.item_by_id(request[:id]) || :not_found
+    when :get_tem
+      tem_id = rand @tems.length
+      { :id => tem_id, :ecert => @tems[tem_id].endorsement_cert.to_pem }
     when :shutdown
-      return :shutdown
+      :shutdown
     when :db_dump
-      return (0...@db.length).map { |i| @db.item(i) }
+      (0...@db.length).map { |i| @db.item(i) }
     else
-      return :unknown
+      :unknown
     end
   end
   

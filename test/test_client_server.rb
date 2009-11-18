@@ -37,6 +37,24 @@ class ClientServerTest < MrTestCase
     end
   end
   
+  def test_get_tem
+    flexmock(Server).should_receive(:tems_from_cluster_file).
+                     with(@empty_cluster_file).and_return do |file|
+      Tem.auto_conf
+      $tem.emit if $tem.activate
+      [$tem]
+    end
+    
+    _test_request do |server_addr|
+      tem_info = Client.get_tem server_addr
+      assert_equal 0, tem_info[:id], 'Incorrect TEM id'
+      assert_equal $tem.endorsement_cert.to_pem, tem_info[:ecert].to_pem,
+                   'Incorrect ECert'
+      assert_equal $tem.pubek.ssl_key.to_pem, tem_info[:pubek].ssl_key.to_pem,
+                   'Incorrect PubEK'
+    end
+  end
+  
   def test_dump_database
     _test_request do |server_addr|
       items = Client.dump_database server_addr

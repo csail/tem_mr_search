@@ -47,6 +47,11 @@ class MapReduceJob
       :map => @mapper.to_plain_object, :reduce => @reducer.to_plain_object,
       :finalize => @finalizer.to_plain_object }
   end
+  
+  # Binds the SECpacks in this job to the given key.
+  def bind(tem_pubek)
+    [@mapper, @reducer, @finalizer].each { |part| part.bind tem_pubek }
+  end
 
   # Base class for the Map-Reduce SECpack wrappers.
   class JobPart
@@ -54,7 +59,23 @@ class MapReduceJob
       unless secpack.nil? or secpack.kind_of? Tem::SecPack
         secpack = Tem::SecPack.new_from_array secpack
       end
-      @secpack = secpack      
+      @job = job
+      @secpack = secpack
+    end
+    
+    # Binds the wrapped SECpack to the given key.
+    def bind(tem_pubek)
+      @secpack.bind tem_pubek, :_secret, :_plain if @secpack
+    end
+    
+    # Creates a copy of the job part by migrating the wrapped SECpack.
+    #
+    # Args:
+    #   target_ecert:: the Endorsement Certificate of the target TEM
+    #   tem:: session to the TEM to be used for migration
+    def migrate(target_ecert, tem)
+      migrated_secpack = tem.migrate @secpack, target_ecert
+      self.class.new migrated_secpack, @job
     end
     
     def to_plain_object
@@ -71,7 +92,7 @@ class MapReduceJob
       @id_attribute = job.id_attribute
     end
     
-    # Returns a SECpack for mapping the given object data into the query.
+    # SECpack for mapping the given object data into the query.
     def map_for_object(object_data)
       return nil unless @secpack
       object_id = object_data[@id_attribute.to_s]    
@@ -93,7 +114,7 @@ class MapReduceJob
   
   # Wrapper for the reduce SECpack.
   class Reducer < JobPart
-    # Returns a SECpack for reducing two inputs coming from maps or other reduces.
+    # SECpack for reducing two inputs coming from maps or other reduces.
     def reduce_for_outputs(output1, output2)
       new_secpack = Tem::SecPack.new_from_array @secpack.to_array
       

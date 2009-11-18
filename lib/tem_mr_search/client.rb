@@ -13,6 +13,24 @@ class Client
   OP = Zerg::Support::Protocols::ObjectProtocol
   OPAdapter = Zerg::Support::Sockets::ProtocolAdapter.adapter_module OP
   
+  # Requests information for a random TEM to be used as a query's root TEM.
+  #
+  # Args:
+  #   server_addr:: string with the address of the Map-Reduce server's RPC port.
+  #
+  # Returns a hash with the following keys:
+  #   :id:: the TEM's ID (to be used as the :root_tem argument in search calls)
+  #   :ecert:: the TEM's Endorsement Certificate
+  #   :pubek:: the TEM's public Endorsement Key (from the ECert)
+  def self.get_tem(server_addr)
+    output = issue_request server_addr, :type => :get_tem
+    return nil unless output
+    
+    ecert = OpenSSL::X509::Certificate.new output[:ecert]
+    pubek = Tem::Key.new_from_ssl_key ecert.public_key
+    { :id => output[:id], :ecert => ecert, :pubek => pubek }
+  end
+  
   # Performs a private database search using a Map-Reduce.
   #
   # Args:
@@ -21,7 +39,12 @@ class Client
   #
   # Returns the result of the Map-Reduce computation.
   def self.search(server_addr, client_query)
-    output = issue_request server_addr, :type => :search, :root_tem => 0,
+    tem_info = get_tem server_addr
+    # TODO: check the endorsement certificate.
+    client_query.bind tem_info[:pubek]
+    
+    output = issue_request server_addr, :type => :search,
+                                        :root_tem => tem_info[:id],
                                         :map_reduce => client_query.to_hash
     output ? client_query.unpack_output(output) : nil
   end
