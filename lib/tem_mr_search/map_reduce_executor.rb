@@ -49,7 +49,7 @@ class MapReduceExecutor
     # Protected by @lock
     @timings = { :tems => Array.new(@tems.length, 0.0),
                  :tasks => { :map => 0.0, :reduce => 0.0, :finalize => 0.0,
-                             :migrate => 0.0 } }
+                             :migrate => 0.0, :tem_ids => 0.0 } }
     
     # Thread-safe.
     @thread_queues = tems.map { |tem| Queue.new }
@@ -63,6 +63,7 @@ class MapReduceExecutor
   #   :result:: the job's result
   #   :timings:: timing statistics on the job's execution 
   def execute
+    t0 = Time.now
     collect_tem_ids
     
     # Spawn TEM threads.
@@ -77,6 +78,7 @@ class MapReduceExecutor
       action = @main_queue.pop
       @planner.action_done action
     end
+    @timings[:total] = Time.now - t0
     
     return { :result => @outputs[@planner.output_id], :timings => @timings }
   end  
@@ -85,8 +87,14 @@ class MapReduceExecutor
   def collect_tem_ids
     threads = (0...@tems.length).map do |tem_index|
       Thread.new(tem_index, @tems[tem_index]) do |index, tem|
+        t0 = Time.now
         ecert = tem.endorsement_cert
-        @lock.synchronize { @tem_certs[index] = ecert }
+        time_delta = Time.now - t0
+        @lock.synchronize do
+          @tem_certs[index] = ecert
+          @timings[:tasks][:tem_ids] += time_delta
+          @timings[:tems][index] += time_delta
+        end
       end
     end
     threads.each { |thread| thread.join }

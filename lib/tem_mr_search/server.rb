@@ -80,7 +80,7 @@ class Server
   end
   
   # Computes the response of a single request.
-  def process_request(request)    
+  def process_request(request)
     case request[:type]
     when :search
       refresh_tems!

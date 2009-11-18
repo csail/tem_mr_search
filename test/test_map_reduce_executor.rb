@@ -35,11 +35,12 @@ class MapReduceExecutorTest < MrTestCase
   
     assert data[:timings], 'No timings returned'
     assert data[:timings][:tasks], 'No tasks data in the timings'
-    [:map, :reduce, :finalize, :migrate].each do |task|
+    [:tem_ids, :migrate, :map, :reduce, :finalize].each do |task|
       assert data[:timings][:tasks][task], "No data on #{task} in the timings"
     end
     assert_operator data[:timings][:tems], :kind_of?, Array,
                     'No per-TEM data in the timings'
+    assert data[:timings][:total], 'No total time in the timings'
 
     # Dump timing stats to show scheduler performance.
     p data[:timings]

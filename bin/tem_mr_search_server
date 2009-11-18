@@ -11,4 +11,6 @@ end
 Thread.abort_on_exception = true
 db_file, cluster_file, server_port = ARGV[0], ARGV[1], ARGV[2]
 server = Tem::Mr::Search::Server.new db_file, cluster_file, server_port
+default_port = Tem::Mr::Search::Server::DEFAULT_PORT
+print "Serving on port #{server_port || default_port}\n"
 server.serve_loop
