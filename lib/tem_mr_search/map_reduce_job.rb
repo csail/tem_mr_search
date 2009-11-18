@@ -48,9 +48,16 @@ class MapReduceJob
       :finalize => @finalizer.to_plain_object }
   end
   
-  # Binds the SECpacks in this job to the given key.
-  def bind(tem_pubek)
-    [@mapper, @reducer, @finalizer].each { |part| part.bind tem_pubek }
+  # Binds the SECpacks in this job to the given keys.
+  #
+  # Args:
+  #   tem_pubeks:: the public keys to bind the SECpacks to; hash with the keys
+  #                +:mapper+, +:reducer+ and +:finalizer+; each key is mapped to
+  #                a TEM key
+  def bind(tem_pubeks)
+    @mapper.bind tem_pubeks[:mapper]
+    @reducer.bind tem_pubeks[:reducer]
+    @finalizer.bind tem_pubeks[:finalizer]
   end
 
   # Base class for the Map-Reduce SECpack wrappers.

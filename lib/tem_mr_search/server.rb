@@ -85,8 +85,8 @@ class Server
     when :search
       refresh_tems!
       job = MapReduceJob.new request[:map_reduce]
-      root_tem = request[:root_tem]
-      executor = MapReduceExecutor.new job, @db, @tems, root_tem
+      root_tems = request[:root_tems]
+      executor = MapReduceExecutor.new job, @db, @tems, root_tems
       executor.execute
     when :fetch
       @db.item_by_id(request[:id]) || :not_found

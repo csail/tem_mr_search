@@ -36,19 +36,37 @@ class MapReducePlanner
   #   job:: the Map-Reduce job (see Tem::Mr::Search::MapReduceJob)
   #   num_items: how many data items does the Map-Reduce run over
   #   num_tems:: how many TEMs are available
-  #   root_tem:: the index of the TEM that has the root mapper and reducer
-  def initialize(job, num_items, num_tems, root_tem)
+  #   root_tems:: the indexes of the TEMs that have the initial SECpacks bound
+  #               to them (hash with the keys +:mapper+, +:reducer+ and
+  #               +:finalizer+)
+  def initialize(job, num_items, num_tems, root_tems)
     @job = job
-    @root_tem = root_tem
+    @root_tems = root_tems
     
     @without = { :mapper => RBTree.new, :reducer => RBTree.new }
-    @with = { :mapper => Set.new([root_tem]),
-              :reducer => Set.new([root_tem]) }
+    @with = { :mapper => Set.new([@root_tems[:mapper]]),
+              :reducer => Set.new([@root_tems[:reducer]]) }
     @free_tems = RBTree.new
-    0.upto(num_tems - 1) do |tem|
-      @free_tems[tem] = true
-      next if tem == root_tem
-      @without.each { |k, v| v[tem] = true }
+    
+    # TEM ordering: the mapper root is first, the reducer root is last, and the
+    #               finalizer root is second
+    @ordered_tems = (0...num_tems).to_a
+    @ordered_tems -= @root_tems.values
+    @ordered_tems = [@root_tems[:mapper]] + @ordered_tems
+    unless @ordered_tems.include? @root_tems[:reducer]
+      @ordered_tems += [@root_tems[:reducer]]
+    end
+    unless @ordered_tems.include? @root_tems[:finalizer]
+      @ordered_tems = [@ordered_tems[0], @root_tems[:finalizer]] +
+                       @ordered_tems[1..-1]
+    end
+    # Reverted index for the TEM ordering.
+    @rindex_tems = Array.new(num_tems)
+    @ordered_tems.each_with_index { |t, i| @rindex_tems[t] = i }
+    
+    @ordered_tems.each_with_index do |tem, i|
+      @free_tems[[i, tem]] = true
+      @without.each { |k, v| v[[i, tem]] = true unless tem == @root_tems[k] }
     end
     
     @unmapped_items = (0...num_items).to_a.reverse
@@ -125,10 +143,11 @@ class MapReducePlanner
     return actions if @without[sec_type].length == 0
     free_tems = free_tems_with_sec sec_type
     free_tems.each do |source_tem|
-      break if @without[sec_type].length == 0
-      target_tem = @without[sec_type].min.first
-      @without[sec_type].delete target_tem
-      @free_tems.delete source_tem
+      break if @without[sec_type].length == 0      
+      target_tem = (sec_type == :mapper ? @without[sec_type].min :
+                                          @without[sec_type].max).first.last
+      @without[sec_type].delete [@rindex_tems[target_tem], target_tem]
+      @free_tems.delete [@rindex_tems[source_tem], source_tem]
       actions.push :action => :migrate, :secpack => sec_type,
                    :with => source_tem, :to => target_tem
     end
@@ -138,7 +157,7 @@ class MapReducePlanner
   
   # Informs the planner that a SECpack migration has completed.
   def done_migrating(action)
-    @free_tems[action[:with]] = true
+    @free_tems[[@rindex_tems[action[:with]], action[:with]]] = true
     @with[action[:secpack]] << action[:to]
   end
   private :done_migrating
@@ -151,7 +170,7 @@ class MapReducePlanner
     return actions if @unmapped_items.empty?
     free_tems_with_sec(:mapper).each do |tem|
       break unless item = @unmapped_items.pop
-      @free_tems.delete tem
+      @free_tems.delete [@rindex_tems[tem], tem]
       actions.push :action => :map, :item => item, :with => tem,
                    :output_id => next_output_id
     end
@@ -166,7 +185,7 @@ class MapReducePlanner
   #
   # The return value is not specified.
   def done_mapping(action)
-    @free_tems[action[:with]] = true
+    @free_tems[[@rindex_tems[action[:with]], action[:with]]] = true
     @reduce_queue[action[:output_id]] = true
   end
   private :done_mapping
@@ -177,14 +196,14 @@ class MapReducePlanner
   def reduce_actions
     actions = []
     return actions if @reduce_queue.length <= 1
-    free_tems_with_sec(:reducer).each do |tem|
+    free_tems_with_sec(:reducer).reverse.each do |tem|
       break if @reduce_queue.length <= 1
       output1_id, output2_id = *[0, 1].map do |i|
         output_id = @reduce_queue.min.first
         @reduce_queue.delete output_id
         output_id
       end
-      @free_tems.delete tem
+      @free_tems.delete [@rindex_tems[tem], tem]
       actions.push :action => :reduce, :with => tem, :output1_id => output1_id,
                    :output2_id => output2_id, :output_id => next_output_id
     end
@@ -199,7 +218,7 @@ class MapReducePlanner
   #
   # The return value is not specified.
   def done_reducing(action)
-    @free_tems[action[:with]] = true
+    @free_tems[[@rindex_tems[action[:with]], action[:with]]] = true
     if action[:output_id] == @last_reduce_id
       @done_reducing = true      
       return
@@ -212,9 +231,13 @@ class MapReducePlanner
   #
   # See next_actions! for a description of the return value.
   def finalize_actions
-    return [] unless @done_reducing and !@output_id and @free_tems[@root_tem]
+    root_tem = @root_tems[:finalizer]
+    unless @done_reducing and !@output_id and
+           @free_tems[[@rindex_tems[root_tem], root_tem]]
+      return []
+    end
     @finalize_ready = false
-    return [ :action => :finalize, :with => @root_tem,
+    return [ :action => :finalize, :with => root_tem,
              :output_id => @last_reduce_id, :final_id => next_output_id ]
   end
   private :finalize_actions
@@ -226,7 +249,7 @@ class MapReducePlanner
   #
   # The return value is not specified.
   def done_finalizing(action)
-    @free_tems[action[:with]] = true
+    @free_tems[[@rindex_tems[action[:with]], action[:with]]] = true
     @output_id = action[:final_id]    
   end
   private :done_finalizing
@@ -237,8 +260,8 @@ class MapReducePlanner
   #   sec_type:: the SECpack type (+:mapper+ or +:reducer+)
   def free_tems_with_sec(sec_type)
     tems = []
-    @free_tems.each do |tem, true_value|
-      tems << tem if @with[sec_type].include? tem
+    @free_tems.each do |index_tem, true_value|
+      tems << index_tem.last if @with[sec_type].include? index_tem.last
     end
     tems
   end

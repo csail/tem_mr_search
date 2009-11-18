@@ -72,12 +72,13 @@ class ClientServerTest < MrTestCase
       [$tem]
     end
     _test_request do |server_addr|
-      result = Client.search server_addr, @client_query
+      data = Client.search server_addr, @client_query
       gold_item = @db.item 5
-      assert_equal fare_id(gold_item), result[:id],
+      assert_equal fare_id(gold_item), data[:result][:id],
                    'Incorrect Map-Reduce result (ID)'
-      assert_equal fare_score(gold_item), result[:score],
+      assert_equal fare_score(gold_item), data[:result][:score],
                    'Incorrect Map-Reduce result (score)'
+      assert data[:timings], 'No timing statistics in Map-Reduce result'
     end
   end
 end

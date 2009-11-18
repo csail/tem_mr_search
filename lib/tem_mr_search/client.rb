@@ -37,16 +37,25 @@ class Client
   #   server_addr:: string with the address of the Map-Reduce server's RPC port.
   #   client_query:: a ClientQuery instance expressing the Map-Reduce search
   #
-  # Returns the result of the Map-Reduce computation.
+  # Returns a hash with the following keys:
+  #   :result:: the result of the Map-Reduce computation
+  #   :timings:: timing statistics on the job's execution 
   def self.search(server_addr, client_query)
-    tem_info = get_tem server_addr
-    # TODO: check the endorsement certificate.
-    client_query.bind tem_info[:pubek]
+    tem_certs = {}
+    tem_ids = {}
+    [:mapper, :reducer, :finalizer].each do |sec|
+      tem_info = get_tem server_addr
+      tem_ids[sec] = tem_info[:id]
+      # TODO: check the endorsement certificate.
+      tem_certs[sec] = tem_info[:pubek]
+    end
+    client_query.bind tem_certs
     
     output = issue_request server_addr, :type => :search,
-                                        :root_tem => tem_info[:id],
+                                        :root_tems => tem_ids,
                                         :map_reduce => client_query.to_hash
-    output ? client_query.unpack_output(output) : nil
+    return nil unless output
+    output.merge! :result => client_query.unpack_output(output[:result])
   end
   
   # Asks for an item in the server's database.

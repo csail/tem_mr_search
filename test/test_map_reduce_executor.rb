@@ -17,20 +17,36 @@ class MapReduceExecutorTest < MrTestCase
     super
   end
       
-  def _test_executor(tems, root_tem)
-    @client_query.bind tems[root_tem].pubek
-    executor = MRExecutor.new @client_query, @db, tems, root_tem
-    packed_output = executor.execute
-    result = @client_query.unpack_output packed_output
+  def _test_executor(tems, root_tems)
+    certs = {}
+    [:mapper, :reducer, :finalizer].each do |sec|
+      certs[sec] = tems[root_tems[sec]].pubek
+    end
+    @client_query.bind certs
+    executor = MRExecutor.new @client_query, @db, tems, root_tems
+    data = executor.execute
+    result = @client_query.unpack_output data[:result]
+    
     gold_item = @db.item 5 
     assert_equal fare_id(gold_item), result[:id],
                  'Incorrect Map-Reduce result (ID)'
     assert_equal fare_score(gold_item), result[:score],
                  'Incorrect Map-Reduce result (score)'
+  
+    assert data[:timings], 'No timings returned'
+    assert data[:timings][:tasks], 'No tasks data in the timings'
+    [:map, :reduce, :finalize, :migrate].each do |task|
+      assert data[:timings][:tasks][task], "No data on #{task} in the timings"
+    end
+    assert_operator data[:timings][:tems], :kind_of?, Array,
+                    'No per-TEM data in the timings'
+
+    # Dump timing stats to show scheduler performance.
+    p data[:timings]
   end
   
   def test_executor_with_autoconf
-    _test_executor [$tem], 0
+    _test_executor [$tem], {:mapper => 0, :reducer => 0, :finalizer => 0}
   end
   
   def test_executor_with_cluster    
@@ -39,6 +55,6 @@ class MapReduceExecutorTest < MrTestCase
     
     tems.each { |tem| tem.emit if tem.activate }
     
-    _test_executor tems, 0
+    _test_executor tems, {:mapper => 0, :reducer => 7, :finalizer => 0}
   end
 end
