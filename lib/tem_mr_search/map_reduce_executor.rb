@@ -47,9 +47,9 @@ class MapReduceExecutor
     @outputs = {}
     
     # Protected by @lock
-    @timings = { :tems => Array.new(@tems.length, 0.0),
-                 :tasks => { :map => 0.0, :reduce => 0.0, :finalize => 0.0,
-                             :migrate => 0.0, :tem_ids => 0.0 } }
+    tasks = { :map => 0.0, :reduce => 0.0, :finalize => 0.0,
+              :migrate => 0.0, :tem_ids => 0.0 }
+    @timings = { :tems => Array.new(@tems.length) { tasks.dup } }
     
     # Thread-safe.
     @thread_queues = tems.map { |tem| Queue.new }
@@ -92,8 +92,7 @@ class MapReduceExecutor
         time_delta = Time.now - t0
         @lock.synchronize do
           @tem_certs[index] = ecert
-          @timings[:tasks][:tem_ids] += time_delta
-          @timings[:tems][index] += time_delta
+          @timings[:tems][index][:tem_ids] += time_delta
         end
       end
     end
@@ -128,8 +127,7 @@ class MapReduceExecutor
       
       @lock.synchronize do
         @tem_parts[action[:secpack]][action[:to]] = out_part
-        @timings[:tems][tem_index] += time_delta
-        @timings[:tasks][:migrate] += time_delta
+        @timings[:tems][tem_index][:migrate] += time_delta
       end
       
     when :map
@@ -145,8 +143,7 @@ class MapReduceExecutor
       
       @lock.synchronize do
         @outputs[action[:output_id]] = output
-        @timings[:tems][tem_index] += time_delta
-        @timings[:tasks][:map] += time_delta
+        @timings[:tems][tem_index][:map] += time_delta
       end
       
     when :reduce
@@ -163,8 +160,7 @@ class MapReduceExecutor
       
       @lock.synchronize do
         @outputs[action[:output_id]] = output
-        @timings[:tems][tem_index] += time_delta
-        @timings[:tasks][:reduce] += time_delta
+        @timings[:tems][tem_index][:reduce] += time_delta
       end
 
     when :finalize
@@ -180,8 +176,7 @@ class MapReduceExecutor
       
       @lock.synchronize do
         @outputs[action[:final_id]] = final_output
-        @timings[:tems][tem_index] += time_delta
-        @timings[:tasks][:finalize] += time_delta
+        @timings[:tems][tem_index][:finalize] += time_delta
       end
     end
   end

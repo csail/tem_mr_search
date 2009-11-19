@@ -34,12 +34,13 @@ class MapReduceExecutorTest < MrTestCase
                  'Incorrect Map-Reduce result (score)'
   
     assert data[:timings], 'No timings returned'
-    assert data[:timings][:tasks], 'No tasks data in the timings'
-    [:tem_ids, :migrate, :map, :reduce, :finalize].each do |task|
-      assert data[:timings][:tasks][task], "No data on #{task} in the timings"
+    assert_equal tems.length, data[:timings][:tems].length,
+                 'No TEM data in the timings'
+    data[:timings][:tems].each do |tem_data|
+      [:tem_ids, :migrate, :map, :reduce, :finalize].each do |task|
+        assert tem_data[task], "No data on #{task} in the per-TEM timings"
+      end      
     end
-    assert_operator data[:timings][:tems], :kind_of?, Array,
-                    'No per-TEM data in the timings'
     assert data[:timings][:total], 'No total time in the timings'
 
     # Dump timing stats to show scheduler performance.
