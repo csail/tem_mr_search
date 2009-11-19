@@ -37,7 +37,8 @@ class MapReduceExecutorTest < MrTestCase
     assert_equal tems.length, data[:timings][:tems].length,
                  'No TEM data in the timings'
     data[:timings][:tems].each do |tem_data|
-      [:tem_ids, :migrate, :map, :reduce, :finalize].each do |task|
+      [:tem_ids, :migrate_map, :migrate_reduce, :map, :reduce,
+       :finalize].each do |task|
         assert tem_data[task], "No data on #{task} in the per-TEM timings"
       end      
     end

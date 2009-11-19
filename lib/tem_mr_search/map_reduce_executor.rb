@@ -48,7 +48,7 @@ class MapReduceExecutor
     
     # Protected by @lock
     tasks = { :map => 0.0, :reduce => 0.0, :finalize => 0.0,
-              :migrate => 0.0, :tem_ids => 0.0 }
+              :migrate_map => 0.0, :migrate_reduce => 0.0, :tem_ids => 0.0 }
     @timings = { :tems => Array.new(@tems.length) { tasks.dup } }
     
     # Thread-safe.
@@ -127,7 +127,8 @@ class MapReduceExecutor
       
       @lock.synchronize do
         @tem_parts[action[:secpack]][action[:to]] = out_part
-        @timings[:tems][tem_index][:migrate] += time_delta
+        task = action[:secpack] == :mapper ? :migrate_map : :migrate_reduce
+        @timings[:tems][tem_index][task] += time_delta
       end
       
     when :map
