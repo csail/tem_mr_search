@@ -23,7 +23,8 @@ test/test_map_reduce_planner.rb
 test/test_query_builders.rb
 testdata/cluster.yml
 testdata/empty_cluster.yml
-testdata/fares.yml
+testdata/fares16.yml
+testdata/fares8.yml
 testdata/parallel_plan_431.yml
 testdata/parallel_plan_740.yml
 testdata/serial_plan_410.yml
