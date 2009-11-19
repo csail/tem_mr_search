@@ -1,3 +1,5 @@
+v0.3.3. Map-Reduce scheduler tweak.
+
 v0.3.2. Map-Reduce timing statistics available in the results.
 
 v0.3.1. Optimized Map-Reduce scheduler. 1.5x speed increase.

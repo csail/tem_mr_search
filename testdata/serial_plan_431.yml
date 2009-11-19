@@ -1,56 +1,56 @@
 --- 
-- - :action: :migrate
-    :with: 0
+- - :with: 0
+    :action: :migrate
     :secpack: :mapper
     :to: 1
-  - :action: :migrate
-    :with: 2
+  - :with: 2
+    :action: :migrate
     :secpack: :reducer
     :to: 1
-- - :action: :migrate
-    :with: 0
+- - :with: 0
+    :action: :migrate
     :secpack: :mapper
     :to: 2
-  - :action: :map
-    :item: 0
+  - :item: 0
     :with: 1
+    :action: :map
     :output_id: 0
-- - :action: :migrate
-    :with: 2
+- - :with: 2
+    :action: :migrate
     :secpack: :reducer
     :to: 0
-- - :action: :map
-    :item: 1
+- - :item: 1
     :with: 0
+    :action: :map
     :output_id: 1
-- - :action: :map
-    :item: 2
+- - :item: 2
     :with: 1
+    :action: :map
     :output_id: 2
-- - :action: :map
-    :item: 3
+- - :item: 3
     :with: 2
+    :action: :map
     :output_id: 3
-- - :action: :reduce
+- - :output2_id: 1
     :with: 0
+    :action: :reduce
     :output_id: 4
     :output1_id: 0
-    :output2_id: 1
 - []
 
-- - :action: :reduce
+- - :output2_id: 3
     :with: 2
+    :action: :reduce
     :output_id: 5
     :output1_id: 2
-    :output2_id: 3
 - []
 
-- - :action: :reduce
+- - :output2_id: 5
     :with: 2
+    :action: :reduce
     :output_id: 6
     :output1_id: 4
-    :output2_id: 5
-- - :action: :finalize
-    :with: 1
+- - :with: 1
+    :action: :finalize
     :output_id: 6
     :final_id: 7

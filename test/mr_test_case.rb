@@ -9,9 +9,9 @@ class MrTestCase < Test::Unit::TestCase
     
     Thread.abort_on_exception = true
     
-    @db_path = File.join File.dirname(__FILE__), "..", "testdata", "fares.yml"
+    @db_path = File.join File.dirname(__FILE__), "..", "testdata", "fares8.yml"
     @cluster_file = File.join File.dirname(__FILE__), "..", "testdata",
-                            "cluster.yml"
+                              "cluster.yml"
     @empty_cluster_file = File.join File.dirname(__FILE__), "..", "testdata",
                                     "empty_cluster.yml"
     @db = Db.new @db_path

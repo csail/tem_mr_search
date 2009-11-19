@@ -1,7 +1,6 @@
 require 'test/mr_test_case'
 require 'flexmock/test_unit'
 
-
 class ClientServerTest < MrTestCase
   Client = Tem::Mr::Search::Client
   Server = Tem::Mr::Search::Server

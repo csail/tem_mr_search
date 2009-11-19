@@ -1,93 +1,93 @@
 --- 
-- - :action: :migrate
-    :with: 0
+- - :with: 0
+    :action: :migrate
     :secpack: :mapper
     :to: 1
-  - :action: :migrate
-    :with: 3
+  - :with: 3
+    :action: :migrate
     :secpack: :reducer
     :to: 2
-- - :action: :migrate
-    :with: 0
+- - :with: 0
+    :action: :migrate
     :secpack: :mapper
     :to: 2
-  - :action: :migrate
-    :with: 1
+  - :with: 1
+    :action: :migrate
     :secpack: :mapper
     :to: 3
-- - :action: :migrate
-    :with: 2
+- - :with: 2
+    :action: :migrate
     :secpack: :reducer
     :to: 1
-  - :action: :migrate
-    :with: 3
+  - :with: 3
+    :action: :migrate
     :secpack: :reducer
     :to: 0
-- - :action: :map
-    :item: 0
+- - :item: 0
     :with: 0
+    :action: :map
     :output_id: 0
-- - :action: :map
-    :item: 1
+- - :item: 1
     :with: 1
+    :action: :map
     :output_id: 1
-- - :action: :map
-    :item: 2
+- - :item: 2
     :with: 2
+    :action: :map
     :output_id: 2
-- - :action: :map
-    :item: 3
+- - :item: 3
     :with: 3
+    :action: :map
     :output_id: 3
-- - :action: :map
-    :item: 4
+- - :item: 4
     :with: 0
+    :action: :map
     :output_id: 4
-- - :action: :map
-    :item: 5
+- - :output2_id: 1
     :with: 1
+    :action: :reduce
     :output_id: 5
-- - :action: :map
-    :item: 6
-    :with: 2
-    :output_id: 6
-- - :action: :reduce
-    :with: 3
-    :output_id: 7
     :output1_id: 0
-    :output2_id: 1
-- - :action: :reduce
-    :with: 0
-    :output_id: 8
+- - :item: 5
+    :with: 2
+    :action: :map
+    :output_id: 6
+- - :output2_id: 3
+    :with: 3
+    :action: :reduce
+    :output_id: 7
     :output1_id: 2
-    :output2_id: 3
-- - :action: :reduce
+- - :item: 6
+    :with: 0
+    :action: :map
+    :output_id: 8
+- - :output2_id: 5
     :with: 1
+    :action: :reduce
     :output_id: 9
     :output1_id: 4
-    :output2_id: 5
 - []
 
-- - :action: :reduce
+- - :output2_id: 7
     :with: 3
+    :action: :reduce
     :output_id: 10
     :output1_id: 6
-    :output2_id: 7
 - []
 
-- - :action: :reduce
+- - :output2_id: 9
     :with: 2
+    :action: :reduce
     :output_id: 11
     :output1_id: 8
-    :output2_id: 9
 - []
 
-- - :action: :reduce
+- - :output2_id: 11
     :with: 3
+    :action: :reduce
     :output_id: 12
     :output1_id: 10
-    :output2_id: 11
-- - :action: :finalize
-    :with: 0
+- - :with: 0
+    :action: :finalize
     :output_id: 12
     :final_id: 13

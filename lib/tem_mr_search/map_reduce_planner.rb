@@ -109,8 +109,8 @@ class MapReducePlanner
   def next_actions!
     actions = migrate_actions :mapper
     actions += migrate_actions :reducer
-    actions += map_actions
     actions += reduce_actions
+    actions += map_actions
     actions += finalize_actions
     actions
   end
